@@ -86,6 +86,7 @@ GF256::GF256(uint8_t number)
     this->number = number;
 }
 
+
 GF256::~GF256()
 = default;
 
@@ -154,6 +155,13 @@ GF256 &GF256::operator=(const int &other)
 {
     this->number = other;
     return *this;
+}
+
+GF256 GF256::pow(int degree)
+{
+    int temp = this->lg[this->number];
+    temp = (temp*degree)%255;
+    return GF256(this->dg[temp]);
 }
 
 

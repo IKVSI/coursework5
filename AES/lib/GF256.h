@@ -22,6 +22,7 @@ public:
     GF256 operator-(const GF256& other) const;
     GF256 operator*(const GF256& other) const;
     GF256 operator/(const GF256& other) const;
+    GF256 pow(int degree);
     bool operator==(const GF256& other) const;
     bool operator!=(const GF256& other) const;
     GF256 operator~() const;

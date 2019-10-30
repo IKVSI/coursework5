@@ -20,42 +20,31 @@ uint8_t SSS::randbyte(uint8_t a, uint8_t b)
     return SSS::gen()%temp+a;
 }
 
-SSS::SSS(int s, int k, int n, uint8_t *X)
+SSS::SSS(int &s, int &k, int &n, uint8_t *X)
 {
-    this->s = s;
-    this->k = k;
-    this->n = n;
-    this->X = new GF256[n];
-    for(int i=0; i<n; ++i)  this->X[i] = X[i];
-    this->S = new GF256[s];
-    for(int i=0; i<s; ++i)
-    {
-        this->S[i] = SSS::randbyte();
-    }
-    for(int i=0; i<s; ++i) std::cout<<"S"<<i<<" = "<<this->S[i]<<'\n';
-    this->A = new GF256[k];
+    this->create(s, k, n, X);
 }
 
 uint8_t *SSS::share(uint8_t secret)
 {
     this->A[0] = secret;
-    int ks = this->k - this->s;
+    int ks = this->k - this->s, ns =this->n - this->s;
     for(int i=1; i<ks; ++i) this->A[i] = SSS::randbyte(1,255);
     this->restoreA();
-    GF256 * V = new GF256[this->n];
-    for(int i=0; i<n; ++i)
+    GF256 * V = new GF256[ns];
+    for(int i=0; i<ns; ++i)
     {
         V[i] = 0;
-        GF256 x(1);
+        GF256 x(1), Xi = this->X[i+this->s];
         for(int j=0; j<this->k; ++j)
         {
-            V[i] = V[i] + x*A[j];
-            x = x * X[i];
+            V[i] = V[i] + x*this->A[j];
+            x = x * Xi;
         }
     }
-    uint8_t * rV = new uint8_t[this->n];
-    for(int i=0; i<n; ++i) rV[i] = V[i].getNumber();
-    for(int i=0; i<n; ++i) std::cout<<"V"<<i<<" = "<<V[i]<<'\n';
+    uint8_t * rV = new uint8_t[ns];
+    for(int i=0; i<ns; ++i) rV[i] = V[i].getNumber();
+    //for(int i=0; i<n; ++i) std::cout<<"V"<<i<<" = "<<V[i]<<'\n';
     delete [] V;
     return rV;
 }
@@ -120,5 +109,32 @@ void SSS::restoreA()
         }
     }
     delete [] S;
+}
+
+SSS::SSS()
+{
+
+}
+
+uint8_t * SSS::secshare()
+{
+    uint8_t * S = new uint8_t[this->s];
+    for(int i=0; i<this->s; ++i) S[i] = this->S[i].getNumber();
+    return S;
+}
+
+void SSS::create(int &s, int &k, int &n, uint8_t *X)
+{
+    this->s = s;
+    this->k = k;
+    this->n = n;
+    this->X = new GF256[n];
+    for(int i=0; i<n; ++i)  this->X[i] = X[i];
+    this->S = new GF256[s];
+    for(int i=0; i<s; ++i)
+    {
+        this->S[i] = SSS::randbyte();
+    }
+    this->A = new GF256[k];
 }
 

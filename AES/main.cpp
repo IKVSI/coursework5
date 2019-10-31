@@ -8,16 +8,31 @@
 
 #define BSIZE 134217728
 
-clock_t TIME;
+clock_t TIME = 0;
+clock_t REAL_TIME;
+clock_t ALLTIME;
 
-void start()
+void startall()
 {
-	TIME = std::clock();
+	ALLTIME = std::clock();
 }
 
-void time()
+void stopall()
 {
-	clock_t temp = std::clock() - TIME;
+	ALLTIME = std::clock() - ALLTIME;
+}
+
+void stop()
+{
+	TIME += std::clock() - REAL_TIME;
+}
+void start()
+{
+	REAL_TIME = std::clock();
+}
+
+void time(clock_t temp)
+{
 	clock_t h = temp / 3600000;
 	temp %= 3600000;
 	clock_t m = temp / 60000;
@@ -100,12 +115,12 @@ void err(int e)
 
 int encrypt(AES &cipher, std::istream &fin, std::ostream &fout)
 {
-    uint8_t buffer[BSIZE];
+	uint8_t* buffer = new uint8_t[BSIZE];
 	// ����� �������
-	start();
     while(!fin.eof())
     {
         fin.read((char *)buffer, BSIZE);
+		start();
         int length = fin.gcount();
         if (length < BSIZE)
         {
@@ -118,23 +133,26 @@ int encrypt(AES &cipher, std::istream &fin, std::ostream &fout)
             std::copy(&out[0], &out[16], &buffer[i]);
             delete [] out;
         }
+		stop();
         fout.write((char *)buffer, length);
     }
 	fout.flush();
 	// ��������� �������
-	time();
+	time(TIME);
+	delete[] buffer;
     return 0;
 }
 
 int decrypt(AES &cipher, std::istream &fin, std::ostream &fout)
 {
-    uint8_t buffer[BSIZE], save[16];
+    uint8_t * buffer = new uint8_t[BSIZE], save[16];
 	// ����� �������
 	start();
     bool fl = false;
     while(!fin.eof())
     {
         fin.read((char *)buffer, BSIZE);
+		start();
         int length = fin.gcount();
         if (fl && length) fout.write((char *)save, 16);
         for(int i=0; i<length;i+=16)
@@ -150,13 +168,15 @@ int decrypt(AES &cipher, std::istream &fin, std::ostream &fout)
             std::copy(&buffer[length], &buffer[BSIZE], save);
             if (fl) fl = false;
         }
+		stop();
         fout.write((char *) buffer, length);
         if (fl) continue;
         fl = true;
     }
 	fout.flush();
 	// ��������� �������
-	time();
+	time(TIME);
+	delete[] buffer;
     return 0;
 }
 
@@ -194,8 +214,18 @@ int main(int argc, char * argv[])
         err(3);
         return 3;
     }
+	startall();
     AES cipher = AES(key);
-    if (mode) encrypt(cipher, fin, fout);
-    else decrypt(cipher, fin, fout);
+	if (mode)
+	{
+		encrypt(cipher, fin, fout);
+	}
+	else
+	{
+		decrypt(cipher, fin, fout);
+	}
+	stopall();
+	std::cout << "ALL";
+	time(ALLTIME);
     return 0;
 }

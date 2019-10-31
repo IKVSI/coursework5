@@ -15,16 +15,31 @@
 #define N 10
 */
 
-clock_t TIME;
+clock_t TIME = 0;
+clock_t REAL_TIME;
+clock_t ALLTIME;
 
-void start()
+void startall()
 {
-	TIME = std::clock();
+	ALLTIME = std::clock();
 }
 
-void time()
+void stopall()
 {
-	clock_t temp = std::clock() - TIME;
+	ALLTIME = std::clock() - ALLTIME;
+}
+
+void stop()
+{
+	TIME += std::clock() - REAL_TIME;
+}
+void start()
+{
+	REAL_TIME = std::clock();
+}
+
+void time(clock_t temp)
+{
 	clock_t h = temp / 3600000;
 	temp %= 3600000;
 	clock_t m = temp / 60000;
@@ -149,13 +164,14 @@ void encrypt(int &k, int &s, int &n, uint8_t * key, const char * filename)
     for(int i=s; i<n; ++i) bout[i] = new uint8_t[BSIZE];
 	// Инициализация шифра
 	AES cipher = AES(key);
-	// Инициализация Таймера
-	start();
+	
     // Запись X значений файлов
     for(int i=0; i<n; ++i) fout[i].write((char*)&X[i], 1);
+	start();
     // Создание шифрованных секретов
     SSS shares[nS];
     for(int i=0; i<nS; ++i) shares[i].create(s, k, n, X);
+	stop();
     // Запись шифрованных секретов
     for(int i=0; i<nS; ++i)
     {
@@ -175,6 +191,7 @@ void encrypt(int &k, int &s, int &n, uint8_t * key, const char * filename)
             delete [] temp;
         }
     }
+	stop();
     for(int i=0; i<s; ++i) fout[i].write((char *) bout[i], nS);
     // Генерация остальных секретов
     int is = 0;
@@ -183,6 +200,7 @@ void encrypt(int &k, int &s, int &n, uint8_t * key, const char * filename)
     {
         fin.read((char *) bin, BSIZE);
         int length = fin.gcount();
+		start();
         for(int i=0; i<length; ++i)
         {
             uint8_t * temp = shares[is].share(bin[i]);
@@ -193,6 +211,7 @@ void encrypt(int &k, int &s, int &n, uint8_t * key, const char * filename)
             delete [] temp;
             is = (is + 1) % nS;
         }
+		stop();
         for(int i=ns; i<n; ++i)
         {
             fout[i].write((char *)bout[i], length);
@@ -200,7 +219,7 @@ void encrypt(int &k, int &s, int &n, uint8_t * key, const char * filename)
     }
 	for (int i = 0; i < k; ++i) fout[i].flush();
 	// Измерение времени
-	time();
+	time(TIME);
     // Освобождение памяти
     for(int i=0; i<n; ++i) delete [] bout[i];
     delete [] bout;
@@ -255,8 +274,6 @@ void decrypt(int &k, uint8_t * key, const char * filename)
 	uint8_t* bout = new uint8_t[BSIZE];
 	// Инициализация шифра
 	AES cipher = AES(key);
-	// Инициализация Таймера
-	start();
 	// Читаем X-ы
 	uint8_t* X = new uint8_t[k];
 	for (int i = 0; i < k; ++i) fin[i].read((char *)&X[i], 1);
@@ -264,12 +281,14 @@ void decrypt(int &k, uint8_t * key, const char * filename)
 	for (int i = 0; i < s; ++i)
 	{
 		fin[i].read((char*)bin[i], nS);
+		start();
 		for (int j = 0; j < nS; j += 16)
 		{
 			uint8_t* temp = cipher.decrypt(&bin[i][j]);
 			std::memcpy(&bin[i][j], temp, 16);
 			delete[] temp;
 		}
+		stop();
 	}
 	// Собираем секрет
 	int is = 0;
@@ -283,6 +302,7 @@ void decrypt(int &k, uint8_t * key, const char * filename)
 			if (length == -1) length = fin[i].gcount();
 			else if (length != fin[i].gcount()) error(6);
 		}
+		start();
 		for (int i = 0; i < length; ++i, is = (is + 1) % nS)
 		{
 			uint8_t * V = new uint8_t[k];
@@ -291,11 +311,12 @@ void decrypt(int &k, uint8_t * key, const char * filename)
 			bout[i] = SSS::restore(X, V, k);
 			delete[] V;
 		}
+		stop();
 		fout.write((char*)bout, length);
 	} while (length == BSIZE);
 	fout.flush();
 	// Измерение времени
-	time();
+	time(TIME);
 	// Освобождение выделенной памяти
 	delete[] bout;
 	delete[] X;
@@ -433,7 +454,11 @@ int main(int argc, char * argv[])
         {
             error(4);
         }
+		startall();
         encrypt(k, s, n, key, argv[6]);
+		stopall();
+		std::cout << "ALL";
+		time(ALLTIME);
     }
     else if (!(strcmp(argv[1], "d") && strcmp(argv[1], "decrypt")))
     {
@@ -446,7 +471,11 @@ int main(int argc, char * argv[])
         {
             error(4);
         }
+		startall();
         decrypt(k, key, argv[4]);
+		stopall();
+		std::cout << "ALL";
+		time(ALLTIME);
     }
     else error(2);
     return 0;

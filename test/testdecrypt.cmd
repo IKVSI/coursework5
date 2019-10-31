@@ -1,5 +1,5 @@
 @ECHO OFF
 
-AES.EXE decrypt key test.pdf.enc new_test.pdf
+AES.EXE decrypt key test.tif.enc newtest.tif
 
 PAUSE

@@ -1,0 +1,7 @@
+
+USE: AES.exe [mode] [key file] [input file] [output file]
+
+mode        -   e[encrypt], d[decrypt]
+key file    -   path to file; use first 32 byte of file for encryption key
+input file  -   path to file for read  encrypt/decrypt information
+output file -   path to file for write decrypt/encrypt information

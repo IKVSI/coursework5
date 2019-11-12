@@ -241,7 +241,7 @@ std::ifstream * findshares(int k, int &s,  const char * filename)
 			fsharesnames.push_back(i.path().string());
 		}
 	}
-	if ((fsharesnames.size() < k) || (fsharesnames[k].back() != 'r')) return nullptr;
+	if ((fsharesnames.size() < k) || (fsharesnames[k-1].back() != 'r')) return nullptr;
 	std::ifstream* fin = new std::ifstream[k];
 	--k;
 	fin[k].open(fsharesnames[k], std::fstream::binary);

@@ -110,13 +110,15 @@ void err(int e)
             break;
     }
     help();
+	exit(e);
 }
 
 
 int encrypt(AES &cipher, std::istream &fin, std::ostream &fout)
 {
+	if (fin.fail()) err(4);
+	if (fout.fail()) err(5);
 	uint8_t* buffer = new uint8_t[BSIZE];
-	// ����� �������
     while(!fin.eof())
     {
         fin.read((char *)buffer, BSIZE);
@@ -137,7 +139,6 @@ int encrypt(AES &cipher, std::istream &fin, std::ostream &fout)
         fout.write((char *)buffer, length);
     }
 	fout.flush();
-	// ��������� �������
 	time(TIME);
 	delete[] buffer;
     return 0;
@@ -145,8 +146,9 @@ int encrypt(AES &cipher, std::istream &fin, std::ostream &fout)
 
 int decrypt(AES &cipher, std::istream &fin, std::ostream &fout)
 {
+	if (fin.fail()) err(4);
+	if (fout.fail()) err(5);
     uint8_t * buffer = new uint8_t[BSIZE], save[16];
-	// ����� �������
 	start();
     bool fl = false;
     while(!fin.eof())
@@ -174,7 +176,6 @@ int decrypt(AES &cipher, std::istream &fin, std::ostream &fout)
         fl = true;
     }
 	fout.flush();
-	// ��������� �������
 	time(TIME);
 	delete[] buffer;
     return 0;

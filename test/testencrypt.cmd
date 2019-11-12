@@ -1,5 +1,5 @@
 @ECHO OFF
 
-AES.EXE encrypt key test.pif test.pif.enc
+AES.EXE encrypt key test.pdf test.pdf.enc
 
 PAUSE
